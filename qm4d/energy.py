@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
-
 
 def losc_Etot(qm4d_out):
     """
@@ -12,7 +10,7 @@ def losc_Etot(qm4d_out):
 
     @note
     This function makes sure to exit with no error. It
-    either returns a number or 'np.nan'.
+    either returns a number or 'float('nan')'.
     """
     try:
         with open(qm4d_out) as f:
@@ -23,10 +21,10 @@ def losc_Etot(qm4d_out):
                     try:
                         return float(Etot)
                     except Exception:
-                        return np.nan
+                        return float('nan')
     except Exception:
         pass
-    return np.nan
+    return float('nan')
 
 
 def scf_Etot(qm4d_out):
@@ -37,7 +35,7 @@ def scf_Etot(qm4d_out):
 
     @note
     This function makes sure to exit with no error. It
-    either returns a number or 'np.nan'.
+    either returns a number or 'float('nan')'.
     """
     try:
         with open(qm4d_out) as f:
@@ -48,7 +46,7 @@ def scf_Etot(qm4d_out):
                     try:
                         return float(Etot)
                     except Exception:
-                        return np.nan
+                        return float('nan')
     except Exception:
         pass
-    return np.nan
+    return float('nan')
