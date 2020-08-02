@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import numpy as np
+
 def Etot_fchk(g16_fchk):
     """
     @param g16_fchk: string. the path for g16 fchk file.
@@ -17,10 +17,11 @@ def Etot_fchk(g16_fchk):
                     try:
                         return float(Etot)
                     except Exception:
-                        return np.nan
+                        return float('nan')
     except Exception:
         pass
-    return np.nan
+    return float('nan')
+
 
 def scf_Etot_log(g16_log):
     """
@@ -44,4 +45,4 @@ def scf_Etot_log(g16_log):
             return ene[-1]
     except Exception:
         pass
-    return np.nan
+    return float('nan')
