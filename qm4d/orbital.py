@@ -41,6 +41,8 @@ def _IP(eigs_data, aelec, belec, based_on='eig_dfa'):
     a_eig_dict = dict(zip(eigs_data['columns'], a_eig))
     if b_homo < 0:
         return a_eig_dict
+    elif len(set(eig_dict['is'])) == 1:
+        return a_eig_dict
     else:
         b_eig = eigs_data['data'][_index(eig_dict, spin=1, idx=b_homo)]
         b_eig_dict = dict(zip(eigs_data['columns'], b_eig))
@@ -56,13 +58,15 @@ def _EA(eigs_data, aelec, belec, based_on='eig_dfa'):
     a_lumo, b_lumo = aelec, belec
     eig_dict = dict(zip(eigs_data['columns'], zip(*eigs_data['data'])))
     a_eig = eigs_data['data'][_index(eig_dict, spin=0, idx=a_lumo)]
-    b_eig = eigs_data['data'][_index(eig_dict, spin=1, idx=b_lumo)]
     a_eig_dict = dict(zip(eigs_data['columns'], a_eig))
-    b_eig_dict = dict(zip(eigs_data['columns'], b_eig))
-
-    return (a_eig_dict
-            if float(a_eig_dict[based_on]) <= float(b_eig_dict[based_on])
-            else b_eig_dict)
+    if len(set(eig_dict['is'])) == 1:
+        return a_eig_dict
+    else:
+        b_eig = eigs_data['data'][_index(eig_dict, spin=1, idx=b_lumo)]
+        b_eig_dict = dict(zip(eigs_data['columns'], b_eig))
+        return (a_eig_dict
+                if float(a_eig_dict[based_on]) <= float(b_eig_dict[based_on])
+                else b_eig_dict)
 
 
 def f_electron_numbers(f_qm4d_out):
