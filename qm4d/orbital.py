@@ -22,10 +22,6 @@ functions in this module.
 _post_losc_eig_names = tuple('eig_dfa eig_proj eig_direct eig_diag'.split())
 
 
-def _print_err(*args, **kargs):
-    print(file=sys.stderr, *args, **kargs)
-
-
 def _index(eig_dict, spin=0, idx=0):
     """
     @param eigs_dict: keys are the column names, and values are lists store the
@@ -189,24 +185,18 @@ def f_post_losc_eigs(f_qm4d_out):
        information. See `f_post_losc_eig_raw_lines()` for the file pointer
        position at exit.
     """
-    try:
-        eig_lines = f_post_losc_eig_raw_lines(f_qm4d_out)
-        line0 = eig_lines[0].replace('=', ' ').split()
-        eig_data = {
-            'data': [],
-            'columns': line0[::2]
-        }
-        for line in eig_lines:
-            line = line.replace('=', ' ').split()
-            data = list(map(float, line[1::2]))
-            eig_data['data'].append(data)
+    eig_lines = f_post_losc_eig_raw_lines(f_qm4d_out)
+    line0 = eig_lines[0].replace('=', ' ').split()
+    eig_data = {
+        'data': [],
+        'columns': line0[::2]
+    }
+    for line in eig_lines:
+        line = line.replace('=', ' ').split()
+        data = list(map(float, line[1::2]))
+        eig_data['data'].append(data)
 
-        return eig_data
-    except NoResultsFoundFromOutput as e:
-        raise e
-    except Exception as e:
-        raise Exception(
-            f'Fail to store all post-LOSC eigenvalues to return: {e}')
+    return eig_data
 
 
 def f_scf_eigs(f_qm4d_out):
@@ -224,31 +214,25 @@ def f_scf_eigs(f_qm4d_out):
        information. See `f_scf_eig_raw_lines()` for the file pointer
        position at exit.
     """
-    try:
-        eig_lines = f_scf_eig_raw_lines(f_qm4d_out)
-        columns = 'is i eig_dfa occ'.split()
-        eig_data = {
-            'data': [],
-            'columns': columns
-        }
+    eig_lines = f_scf_eig_raw_lines(f_qm4d_out)
+    columns = 'is i eig_dfa occ'.split()
+    eig_data = {
+        'data': [],
+        'columns': columns
+    }
 
-        spin = 0
-        for eigs in eig_lines:
-            for line in eigs:
-                line = line.replace(':', ' ').split()
-                idx = int(line[0]) - 1
-                eig_val = float(line[2])
-                occ = float(line[-1])
-                data = [spin, idx, eig_val, occ]
-                eig_data['data'].append(data)
+    spin = 0
+    for eigs in eig_lines:
+        for line in eigs:
+            line = line.replace(':', ' ').split()
+            idx = int(line[0]) - 1
+            eig_val = float(line[2])
+            occ = float(line[-1])
+            data = [spin, idx, eig_val, occ]
+            eig_data['data'].append(data)
 
-            spin += 1
-        return eig_data
-    except NoResultsFoundFromOutput as e:
-        raise e
-    except Exception as e:
-        raise Exception(
-            f'Fail to store all SCF eigenvalues to return: {e}')
+        spin += 1
+    return eig_data
 
 
 def post_losc_EA_eigs(qm4d_out, based_on='eig_dfa'):
@@ -262,26 +246,21 @@ def post_losc_EA_eigs(qm4d_out, based_on='eig_dfa'):
            Supported choices are specified in `_post_losc_eig_names`.
     @return dict. All the eigenvalues selected based on `based_on`.
             Keys: `['is' 'i'] + _post_losc_eig_names`.
-            If finding results fails, return 'None'.
     """
     if based_on not in _post_losc_eig_names:
         raise ValueError(
             f"Valid values for 'based_on' are: {_post_losc_eig_names}'.")
 
-    try:
-        with open(qm4d_out) as f:
-            # step1: get electron numbers
-            aelec, belec = f_electron_numbers(f)
-            if not aelec.is_integer() or not belec.is_integer():
-                raise Exception(
-                    f'Detect fractional electrons for qm4d output: {qm4d_out}')
+    with open(qm4d_out) as f:
+        # step1: get electron numbers
+        aelec, belec = f_electron_numbers(f)
+        if not aelec.is_integer() or not belec.is_integer():
+            raise Exception(
+                f'Detect fractional electrons for qm4d output: {qm4d_out}')
 
-            # step2: get electron numbers
-            eigs_data = f_post_losc_eigs(f)
-            return _EA(eigs_data, aelec, belec, based_on=based_on)
-    except Exception as e:
-        _print_err(f'Fail to get eigenvalues for EA from post-LOSC: {e}')
-        return None
+        # step2: get electron numbers
+        eigs_data = f_post_losc_eigs(f)
+        return _EA(eigs_data, aelec, belec, based_on=based_on)
 
 
 def post_losc_IP_eigs(qm4d_out, based_on='eig_dfa'):
@@ -295,26 +274,21 @@ def post_losc_IP_eigs(qm4d_out, based_on='eig_dfa'):
            Supported choices are specified in `_post_losc_eig_names`.
     @return dict. All the eigenvalues selected based on `based_on`.
             Keys: `['is' 'i'] + _post_losc_eig_names`.
-            If finding results fails, return `None`.
     """
     if based_on not in _post_losc_eig_names:
         raise ValueError(
             f"Valid values for 'based_on' are: {_post_losc_eig_names}'.")
 
-    try:
-        with open(qm4d_out) as f:
-            # step1: get electron numbers
-            aelec, belec = f_electron_numbers(f)
-            if not aelec.is_integer() or not belec.is_integer():
-                raise Exception(
-                    f'Detect fractional electrons for qm4d output: {qm4d_out}')
+    with open(qm4d_out) as f:
+        # step1: get electron numbers
+        aelec, belec = f_electron_numbers(f)
+        if not aelec.is_integer() or not belec.is_integer():
+            raise Exception(
+                f'Detect fractional electrons for qm4d output: {qm4d_out}')
 
-            # step2: get electron numbers
-            eigs_data = f_post_losc_eigs(f)
-            return _IP(eigs_data, aelec, belec, based_on=based_on)
-    except Exception as e:
-        _print_err(f'Fail to get eigenvalues for IP for post-LOSC: {e}')
-        return None
+        # step2: get electron numbers
+        eigs_data = f_post_losc_eigs(f)
+        return _IP(eigs_data, aelec, belec, based_on=based_on)
 
 
 def post_losc_EA(qm4d_out, based_on='eig_dfa', selection='eig_proj'):
@@ -329,18 +303,13 @@ def post_losc_EA(qm4d_out, based_on='eig_dfa', selection='eig_proj'):
            one orbital energy from the determined eigenvalues for the EA.
            Default to 'eig_proj'.
            Supported choices are specified in `_post_losc_eig_names`.
-    @return float. The corresponding eigenvalue for EA. If finding result fails,
-            return `float('nan')`
+    @return float. The corresponding eigenvalue for EA.
     """
     if selection not in _post_losc_eig_names:
         raise ValueError(
             f"Valid values for 'selection' are: {_post_losc_eig_names}'.")
 
-    try:
-        return float(post_losc_EA_eigs(qm4d_out, based_on=based_on)[selection])
-    except Exception as e:
-        _print_err(f'Fail to get the eigenvalue for EA: {e}')
-        return float('nan')
+    return float(post_losc_EA_eigs(qm4d_out, based_on=based_on)[selection])
 
 
 def post_losc_IP(qm4d_out, based_on='eig_dfa', selection='eig_proj'):
@@ -355,18 +324,13 @@ def post_losc_IP(qm4d_out, based_on='eig_dfa', selection='eig_proj'):
            one orbital energy from the determined eigenvalues for the IP.
            Default to 'eig_proj'.
            Supported choices are specified in `_post_losc_eig_names`.
-    @return float. The corresponding eigenvalue for IP. If no result is found,
-            return `float('nan')`
+    @return float. The corresponding eigenvalue for IP.
     """
     if selection not in _post_losc_eig_names:
         raise ValueError(
             f"Valid values for 'selection' are: {_post_losc_eig_names}'.")
 
-    try:
-        return float(post_losc_IP_eigs(qm4d_out, based_on=based_on)[selection])
-    except Exception as e:
-        _print_err(f'Fail to get the eigenvalue for EA: {e}')
-        return float('nan')
+    return float(post_losc_IP_eigs(qm4d_out, based_on=based_on)[selection])
 
 
 def scf_IP(qm4d_out):
@@ -376,21 +340,14 @@ def scf_IP(qm4d_out):
     @param qm4d_out: string. path of qm4d output file
     @return float. The corresponding eigenvalue for IP. If no result is found,
             return 'float('nan')`
-
-    @note
-    1. This function is exception free.
     """
-    try:
-        with open(qm4d_out) as f:
-            aelec, belec = f_electron_numbers(f)
-            if not aelec.is_integer() or not belec.is_integer():
-                raise Exception('Detect fractional electron.')
+    with open(qm4d_out) as f:
+        aelec, belec = f_electron_numbers(f)
+        if not aelec.is_integer() or not belec.is_integer():
+            raise Exception('Detect fractional electron.')
 
-            eigs_data = f_scf_eigs(f)
-            return _IP(eigs_data, aelec, belec, based_on='eig_dfa')['eig_dfa']
-    except Exception as e:
-        _print_err(f'Fail to get the SCF eigenvalue for IP: {e}')
-        return float('nan')
+        eigs_data = f_scf_eigs(f)
+        return _IP(eigs_data, aelec, belec, based_on='eig_dfa')['eig_dfa']
 
 
 def scf_EA(qm4d_out):
@@ -398,22 +355,16 @@ def scf_EA(qm4d_out):
     Get the SCF orbital energy that is corresponding to EA.
 
     @param qm4d_out: string. path of qm4d output file
-    @return float. The corresponding eigenvalue for EA. If no result is found,
-            return with `float('nan')`
+    @return float. The corresponding eigenvalue for EA.
 
     @note
     1. If alpha and beta orbital energy are degenerated, return the results
     from alpha.
-    2. This function is exception free.
     """
-    try:
-        with open(qm4d_out) as f:
-            aelec, belec = f_electron_numbers(f)
-            if not aelec.is_integer() or not belec.is_integer():
-                raise Exception('Detect fractional electron.')
+    with open(qm4d_out) as f:
+        aelec, belec = f_electron_numbers(f)
+        if not aelec.is_integer() or not belec.is_integer():
+            raise Exception('Detect fractional electron.')
 
-            eigs_data = f_scf_eigs(f)
-            return _EA(eigs_data, aelec, belec, based_on='eig_dfa')['eig_dfa']
-    except Exception as e:
-        _print_err(f'Fail to get the SCF eigenvalue for EA: {e}')
-        return float('nan')
+        eigs_data = f_scf_eigs(f)
+        return _EA(eigs_data, aelec, belec, based_on='eig_dfa')['eig_dfa']
