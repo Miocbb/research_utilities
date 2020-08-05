@@ -42,6 +42,23 @@ def _f_orbital_symmetries(f):
         raise NoResultsFoundFromOutput(
             f.name, start, 'No orbital symmetries found.')
 
+def f_electron_numbers(f_g16_log):
+    """
+    Extract the electron numbers for alpha and beta from an g16 log file stream.
+
+    @param f_g16_log: file object of a gaussian log file.
+    @return (aelec, belec): (float, float). The alpha and beta electron numbers.
+    """
+
+    start = f_g16_log.tell()
+    line = f_g16_log.readline()
+    while line:
+        if 'alpha electrons' in line:
+            t = line.strip().split()
+            return float(t[0]), float(t[3])
+        line = f_g16_log.readline()
+    raise NoResultsFoundFromOutput(f_g16_log.name, start, 'No electron number found.')
+
 
 def f_orbital_symmetries(f_g16_log):
     """
