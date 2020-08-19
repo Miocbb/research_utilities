@@ -4,6 +4,86 @@ import sys
 import copy
 
 
+class CommandLine:
+    """
+    QM4D style command line. It is always separated by whitespace.
+
+    -----------
+    Examples
+    'xyz mol.xyz': 'xyz' is the cmd key, and 'mol.xyz' is the cmd value.
+    """
+
+    def __init__(self, cmd_str):
+        self._cmd = cmd_str.strip().split()
+
+    def __str__(self):
+        return ' '.join(self._cmd)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def _index(self, key, step=1) -> int:
+        """
+        Return the index of command value based on command key and step.
+        """
+        try:
+            key = key.strip()
+            idx = self._cmd.index(key) + step
+            self._cmd[idx]
+            return idx
+        except ValueError:
+            raise ValueError(f'{key} is not in command line.')
+        except IndexError:
+            raise IndexError(
+                f'Index is out of command line\'s range: {idx} vs {len(self._cmd)}')
+
+    def copy(self) -> 'CommandLine':
+        return CommandLine(self.to_str())
+
+    def get(self, key, step=1) -> str:
+        """
+        Get value from the cmd.
+
+        -----------
+        Parameters
+        key: str
+            the comand key.
+        step: int, default 1.
+            Get the command value from the index of command key with number of
+            steps `step`.
+
+        -----------
+        Return str
+            The raw and striped string for the command value.
+        """
+        idx = self._index(key, step=step)
+        return self._cmd[idx]
+
+    def to_str(self) -> str:
+        return ' '.join(self._cmd)
+
+    def update(self, key, value, step=1) -> 'self':
+        """
+        Update the value from the cmd based on command key and step.
+
+        -----------
+        Parameters
+        key: str
+            the comand key.
+        value: str
+            the new comand value.
+        step: int, default 1.
+            Get the command value from the index of command key with number of
+            steps `step`.
+
+        -----------
+        Return self
+        """
+        idx = self._index(key, step=step)
+        self._cmd[idx] = value.strip()
+        return self
+
+
 class Input:
     """
     QM4D style input
@@ -108,11 +188,11 @@ class Input:
                     n += 1
         return n
 
-    def find(self, key_cmd, parttern) -> list:
+    def find(self, key_cmd, pattern) -> list:
         """
-        Find the matched input line based on parttern.
+        Find the matched input line based on pattern.
 
-        The `parttern.split()` is used for searching.
+        The `pattern.split()` is used for searching.
         See `self._array_startswith()`.
 
         -----------
@@ -120,8 +200,8 @@ class Input:
         key_cmd: str
             QM4D key command, such as '$qm'. If `key_cmd == 'all'`, the search
             will be applied to the whole input.
-        parttern: str
-            The search parttern.
+        pattern: str
+            The search pattern.
 
         -----------
         Return list
@@ -129,13 +209,65 @@ class Input:
         """
         rst = []
         key_cmd = self._key_cmd_name if key_cmd == 'all' else [key_cmd.strip()]
-        parrtern_s = parttern.strip().split()
+        parrtern_s = pattern.strip().split()
         for key in key_cmd:
             block_cmd = self._key_cmd_block[key]
             for _, cmd_line in enumerate(block_cmd):
                 if self._array_startswith(cmd_line.split(), parrtern_s):
                     rst.append(cmd_line)
         return rst
+
+    def find_first(self, key_cmd, pattern) -> str:
+        """
+        Find the first matched input line based on pattern.
+
+        The `pattern.split()` is used for searching.
+        See `self._array_startswith()`.
+
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'. If `key_cmd == 'all'`, the search
+            will be applied to the whole input.
+        pattern: str
+            The search pattern.
+
+        -----------
+        Return str
+            The matched input line.
+        """
+        find = self.find(key_cmd, pattern)
+        if not find:
+            raise ValueError(
+                f'No matched line found from input. Pattern: {pattern}')
+        else:
+            return find[0]
+
+    def find_last(self, key_cmd, pattern) -> str:
+        """
+        Find the last matched input line based on pattern.
+
+        The `pattern.split()` is used for searching.
+        See `self._array_startswith()`.
+
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'. If `key_cmd == 'all'`, the search
+            will be applied to the whole input.
+        pattern: str
+            The search pattern.
+
+        -----------
+        Return str
+            The matched input line.
+        """
+        find = self.find(key_cmd, pattern)
+        if not find:
+            raise ValueError(
+                f'No matched line found from input. Pattern: {pattern}')
+        else:
+            return find[-1]
 
     def insert(self, key_cmd, cmd, position='end') -> 'self':
         """
