@@ -15,7 +15,9 @@ class Input:
 
     def __init__(self, inp=''):
         self._path = inp
+        # record key commands' order
         self._key_cmd_name = []
+        # dict: (str, list of str) = (key_cmd, command block)
         self._key_cmd_block = {}
         if self._path:
             if not os.path.isfile(self._path):
@@ -24,15 +26,17 @@ class Input:
                 raw_cmd = [line.strip() for line in f.readlines()]
                 key_cmd_idx = [i for i, cmd in enumerate(raw_cmd)
                                if cmd.startswith(r'$')]
-                self._key_cmd_name, self._key_cmd_block = self._split(raw_cmd,
-                                                                      key_cmd_idx)
+                self._key_cmd_name, self._key_cmd_block = self._split(
+                    raw_cmd, key_cmd_idx)
+            for key, _ in self._key_cmd_block.items():
+                self._key_cmd_block[key].pop(0)
 
     def __str__(self):
         inp = ''
         for name in self._key_cmd_name:
             block = self._key_cmd_block[name]
             new_block = [i + '\n' for i in block]
-            inp += ''.join(new_block)
+            inp += f'{name}\n' + ''.join(new_block)
         return inp
 
     def __repr__(self):
@@ -49,13 +53,6 @@ class Input:
             blocks[name] = block
         return names, blocks
 
-    def copy(self):
-        other = Input()
-        other._path = self._path
-        other._key_cmd_name = copy.deepcopy(self._key_cmd_name)
-        other._key_cmd_block = copy.deepcopy(self._key_cmd_block)
-        return other
-
     def _array_startswith(self, array, sub_array):
         l1 = len(array)
         l2 = len(sub_array)
@@ -67,16 +64,23 @@ class Input:
                 flag = (flag and (array[i] == sub_array[i]))
             return flag
 
-    def replace_line(self, line, new_line, key_cmd='') -> int:
+    def copy(self):
+        other = Input()
+        other._path = self._path
+        other._key_cmd_name = copy.deepcopy(self._key_cmd_name)
+        other._key_cmd_block = copy.deepcopy(self._key_cmd_block)
+        return other
+
+    def replace_line(self, key_cmd, line, new_line) -> int:
         """
         Replace matched line in the input file in place.
 
         -----------
         Parameters
-        key_cmd: str, default ''.
+        key_cmd: str
             QM4D key command name, such as '$qm', '$doqm'.
             This makes the replacement for the specified key command blocks.
-            If `key_cmd == ''`, the replacement will be applied to the whole
+            If `key_cmd == 'all'`, the replacement will be applied to the whole
             input.
         line: str
             original input line starts with `line.split()`.
@@ -92,21 +96,19 @@ class Input:
         Return int
             The number of replacement.
         """
-        key_cmd = key_cmd.split()
-        if not key_cmd:
-            key_cmd = self._key_cmd_name
+        key_cmd = self._key_cmd_name if key_cmd == 'all' else [key_cmd.strip()]
+        line_s = line.strip().split()
+        new_line = new_line.strip()
         n = 0
         for key in key_cmd:
             block_cmd = self._key_cmd_block[key]
-            line_s = line.split()
             for i, cmd_line in enumerate(block_cmd):
-                cmd_line_s = cmd_line.split()
-                if self._array_startswith(cmd_line_s, line_s):
+                if self._array_startswith(cmd_line.split(), line_s):
                     block_cmd[i] = new_line
                     n += 1
         return n
 
-    def find(self, parttern, key_cmd='') -> list:
+    def find(self, key_cmd, parttern) -> list:
         """
         Find the matched input line based on parttern.
 
@@ -116,7 +118,8 @@ class Input:
         -----------
         Parameter
         key_cmd: str
-            QM4D key command, such as '$qm'.
+            QM4D key command, such as '$qm'. If `key_cmd == 'all'`, the search
+            will be applied to the whole input.
         parttern: str
             The search parttern.
 
@@ -125,19 +128,16 @@ class Input:
             The list of matched input line.
         """
         rst = []
-        key_cmd = key_cmd.split()
-        if not key_cmd:
-            key_cmd = self._key_cmd_name
+        key_cmd = self._key_cmd_name if key_cmd == 'all' else [key_cmd.strip()]
+        parrtern_s = parttern.strip().split()
         for key in key_cmd:
             block_cmd = self._key_cmd_block[key]
-            parrtern_s = parttern.split()
-            for i, cmd_line in enumerate(block_cmd):
-                cmd_line_s = cmd_line.split()
-                if self._array_startswith(cmd_line_s, parrtern_s):
+            for _, cmd_line in enumerate(block_cmd):
+                if self._array_startswith(cmd_line.split(), parrtern_s):
                     rst.append(cmd_line)
         return rst
 
-    def insert(self, key_cmd, cmd, position='end'):
+    def insert(self, key_cmd, cmd, position='end') -> 'self':
         """
         -----------
         Parameter
@@ -151,6 +151,13 @@ class Input:
             other_string: use other_string to find the matched line. Then
                 insert the new command after the matched line.
         """
+        key_cmd = key_cmd.strip()
+        cmd = cmd.strip()
+        if key_cmd not in self._key_cmd_block.keys():
+            self._key_cmd_block[key_cmd] = [cmd]
+            self._key_cmd_name.append(key_cmd)
+            return self
+
         block_cmd = self._key_cmd_block[key_cmd]
         idx = -1
         if position == 'head':
@@ -171,6 +178,51 @@ class Input:
                 raise ValueError(
                     f'No matching position found based on {position}')
         block_cmd.insert(idx, cmd)
+
+        return self
+
+    def delete_line(self, key_cmd, cmd) -> int:
+        """
+        Delete a line of command in a key command block.
+
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'. If `key_cmd == 'all'`, the deletion
+            will be applied to the whole input.
+        cmd: str
+            The command to be deleted.
+
+        -----------
+        Retrun int
+            The number of deletion.
+        """
+        key_cmd = self._key_cmd_name if key_cmd == 'all' else [key_cmd.strip()]
+        cmd_s = cmd.strip().split()
+        n = 0
+        for key in key_cmd:
+            cmd_block = self._key_cmd_block[key]
+            new_cmd_block = []
+            for _, cmd_line in enumerate(cmd_block):
+                if not self._array_startswith(cmd_line.split(), cmd_s):
+                    new_cmd_block.append(cmd_line)
+                else:
+                    n += 1
+            self._key_cmd_block[key] = new_cmd_block
+        return n
+
+    def delete_block(self, key_cmd) -> 'self':
+        """
+        Delete the whole key command block.
+
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'.
+        """
+        del self._key_cmd_block[key_cmd.strip()]
+        self._key_cmd_name.remove(key_cmd.strip())
+        return self
 
     def to_inp(self, file_name):
         """
