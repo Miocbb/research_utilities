@@ -99,7 +99,9 @@ def backward(data, step, deri_order=1, accuracy_level=1, start_index=-1):
     sign = 1
     if deri_order % 2 == 1:
         sign = -1
-    data = np.array(data)[-1::-1]
+    data = list(data)
+    data.reverse()
+    data = np.array(data)
 
     if start_index >= 0:
         start_index = data.size - start_index - 1
@@ -134,7 +136,9 @@ def central(data, step, deri_order=1, accuracy_level=1, mid_index=-1):
         if deri_order % 2 == 1:
             sign = -1
         coef = cen_coefs[deri_order][accuracy_level]
-        coef = np.append(coef, sign * coef[-2::-1])
+        t = list(coef[:-1])
+        t.reverse()
+        coef = np.append(coef, sign * t)
     except:
         raise Exception(
             'Cannot find coefficient. deri_order or accuracy_level is wrong.')

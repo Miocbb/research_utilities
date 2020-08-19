@@ -366,8 +366,8 @@ class Input:
     def print(self):
         print(self.__str__())
 
-    def path(self):
+    def path(self) -> str:
         return self._path
 
-    def abspath(self):
+    def abspath(self) -> str:
         return os.path.abspath(self._path)
