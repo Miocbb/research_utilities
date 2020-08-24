@@ -274,6 +274,8 @@ class Input:
 
     def insert(self, key_cmd, cmd, position='end') -> 'self':
         """
+        Insert a command line in a key command block.
+
         -----------
         Parameter
         key_cmd: str
@@ -287,9 +289,9 @@ class Input:
                 insert the new command after the matched line.
         """
         key_cmd = key_cmd.strip()
-        cmd = cmd.strip()
+        cmd = cmd.strip().split('\n')
         if key_cmd not in self._key_cmd_block.keys():
-            self._key_cmd_block[key_cmd] = [cmd]
+            self._key_cmd_block[key_cmd] = cmd
             self._key_cmd_name.append(key_cmd)
             return self
 
@@ -312,9 +314,41 @@ class Input:
             if not flag:
                 raise ValueError(
                     f'No matching position found based on {position}')
-        block_cmd.insert(idx, cmd)
+        block_cmd[idx:idx] = cmd
 
         return self
+
+    def insert_block(self, key_cmd, cmd_block='', position='end'):
+        """
+        Insert a key command block into the input.
+
+        -----------
+        Parameter
+        key_cmd: str
+            The key command to be inserted, such as '$qm'.
+        cmd_block: str, default ''
+            The command line block to be inserted for the inserted key command.
+        position: str, default 'end'
+            The position to insert the key command block. It must be an existing
+            key command name or 'end'. The default insertion will append the
+            command block at the end of input file.
+        """
+        if key_cmd in self._key_cmd_name:
+            raise ValueError(
+                f'key command already exists in input file: {os.path.relpath(self.path)}')
+
+        cmd_block = cmd_block.strip().split('\n')
+        cmd_block = [i.strip() for i in cmd_block]
+        if position == 'end':
+            self._key_cmd_name.append(key_cmd)
+            self._key_cmd_block[key_cmd] = cmd_block
+        else:
+            if position not in self._key_cmd_name:
+                raise ValueError(
+                    f'Wrong insert position: key command does not exist in input file: {os.path.relpath(self.path)}')
+            self._key_cmd_name.insert(self._key_cmd_name.index(position) + 1,
+                                      key_cmd)
+            self._key_cmd_block[key_cmd] = cmd_block
 
     def delete_line(self, key_cmd, cmd) -> int:
         """
@@ -358,6 +392,37 @@ class Input:
         del self._key_cmd_block[key_cmd.strip()]
         self._key_cmd_name.remove(key_cmd.strip())
         return self
+
+    def clear_block(self, key_cmd) -> 'self':
+        """
+        Clear all commands in the key command block.
+
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'.
+        """
+        self._key_cmd_block[key_cmd] = []
+        return self
+
+    def update(self, key_cmd, cmd, new_cmd):
+        """
+        Update all commands with the new command line. If no command found in
+        the key command block, insert the new command line at the end of the
+        key command block.
+        -----------
+        Parameter
+        key_cmd: str
+            QM4D key command, such as '$qm'.
+        cmd: str
+            command search pattern, such as 'xyz'.
+        new_cmd: str
+            new command line, such as 'xyz mol.xyz'.
+        """
+        if self.find(key_cmd, cmd):
+            self.replace_line(key_cmd, cmd, new_cmd)
+        else:
+            self.insert(key_cmd, new_cmd)
 
     def to_inp(self, file_name):
         """
