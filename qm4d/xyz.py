@@ -38,6 +38,8 @@ number_to_element = {
     '117': 'Ts', '118': 'Og'
 }
 
+element_to_number = {value:int(key) for key, value in number_to_element.items()}
+
 
 def _is_int(s):
     try:
