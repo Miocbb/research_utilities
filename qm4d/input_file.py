@@ -144,6 +144,9 @@ class Input:
                 flag = (flag and (array[i] == sub_array[i]))
             return flag
 
+    def key_cmd(self):
+        return tuple(self._key_cmd_name)
+
     def copy(self):
         other = Input()
         other._path = self._path

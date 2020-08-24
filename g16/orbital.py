@@ -2,7 +2,7 @@
 Related to the orbitals from calculation with using gaussian package.
 """
 
-from ..exception.exception import *
+from research_utilities.exception.exception import *
 
 
 def _f_orbital_symmetries(f):
