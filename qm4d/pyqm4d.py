@@ -75,9 +75,7 @@ def run2(qm4d_exe, qm4d_inp, qm4d_out, append_out=False, print_err=False):
     """
     Run qm4d. Raise SCF error if qm4d encounter SCF failuar.
     """
-    open_way = 'w'
-    if append_out:
-        open_way = 'w+'
+    open_way = 'a' if append_out else 'w'
     with open(qm4d_out, open_way) as f:
         p = Popen([qm4d_exe, qm4d_inp], stdout=f, stderr=PIPE, text=True)
         rc, err = p.communicate()
@@ -92,9 +90,7 @@ def run3(qm4d_exe, qm4d_inp, qm4d_out, append_out=False, print_err=False):
     """
     Run qm4d. Return (return_code, errmsg).
     """
-    open_way = 'w'
-    if append_out:
-        open_way = 'w+'
+    open_way = 'a' if append_out else 'w'
     with open(qm4d_out, open_way) as f:
         rt = subprocess.run([qm4d_exe, qm4d_inp], stdout=f,
                             stderr=PIPE, text=True)
